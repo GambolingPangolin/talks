@@ -4,7 +4,7 @@
 
 # Slides and code
 
-> https://github.com/GambolingPangolin/talks/polysemy
+**https://github.com/GambolingPangolin/talks/polysemy**
 
 # Pure and impure functions
 
@@ -19,7 +19,8 @@ An important distinction in functional programming:
 
 . . .
 
-Monads are the standard way to encapsulate side effects.
+It is up to the programmer to control the evaluation of programs with impure
+expressions.  Monads are the standard way to direct this evaluation.
 
 # Composing monads
 
@@ -53,7 +54,7 @@ instance Monad m => Monad (MaybeT m) where
   return = return . Just
   MaybeT x >>= f = MaybeT $ x >>= maybe (return Nothing) (runMaybeT . f)
 ```
-In order to reuse functions expressed in terms of the base monad we also need
+In order to reuse expressions in terms of the base monad we also need
 
 ```haskell
 -- Part of the MonadTrans typeclass
@@ -62,7 +63,8 @@ lift :: Monad m => m a -> MaybeT m a
 
 # Algebraic effects
 
-Effect systems work with a higher order type that includes a representation of a set of effects
+Effect systems work with a higher order type that includes a representation of
+a set of effects
 
 ```haskell
 data Effect e a = _ -- details later
@@ -78,35 +80,39 @@ iffy :: HasEffect e MaybeE => Maybe a -> Effect e a
 Handlers remove effects
 
 ```haskell
-handleMaybeE :: Effect (MaybeE ∪ e) a -> Effect e a
+handleMaybeE :: Effect (MaybeE ∪ e) a -> Effect e (Maybe a)
 ```
 
 # Abstraction
 
 ::: incremental
 
+- Code using monad transformers typically fixes a concrete monad transformer
+  stack
 - `mtl` provides typeclasses like `MonadReader` that abstract over the monad
-- To handle some set of effects, a concrete monad transformer stack must implement the associated typeclasses
-- This requires `m * n` new instances if `m` custom monad transformers enclose `n` `mtl` effects
+- To handle some set of effects, a concrete monad transformer stack must
+  implement the associated typeclasses
+- This requires `m * n` new instances if `m` custom monad transformers enclose
+  `n` different `mtl` effects
 - Algebraic effects run in a fixed monad, but the effects in scope vary
 
 :::
 
 # Free functors
 
-Warm up for free constructions
-
 Higher kinded type `f :: * -> *` => free functor
 
 ```haskell
-data Coyoneda f a = CoYo (f x) (x -> a)
+data FreeF f a = FreeF (f x) (x -> a)
 
-instance Functor (Coyoneda f) where
-  fmap f (CoYo x f') = CoYo x (f . f')
+instance Functor (FreeF f) where
+  fmap f (FreeF x f') = FreeF x (f . f')
 ```
 
-Note that `Coyoneda f` satisfies the functor laws `fmap g . fmap h = fmap $ g .
+Note that `FreeF f` satisfies the functor laws `fmap g . fmap h = fmap $ g .
 h` and `fmap id  = id` by construction
+
+_`FreeF` is properly called `Coyoneda`_
 
 # Free monads I
 
@@ -126,27 +132,31 @@ instance Functor f => Monad (Free f) where
 
 This monad has the property that transformations `Free f -> m` that respect the
 monad structure are naturally identified with ordinary natural transformations
-`f -> m`
+`f ~> m`
+
+```haskelll
+interpret :: Monad a => (∀ x . f x -> m x) -> Free f a -> m a
+interpret _  (R x) = return x
+interpret nt (F x) = nt x >>= interpret nt
+```
 
 # Free monads II
 
 Free monads capture syntax trees
 
 ```haskell
-data Counter a = Inc a | Dec a
-type Expr = Free Counter Int
+data Counter a = Inc Int a | Dec Int a deriving Functor
 
-incM x = F $ Inc (R x) :: Int -> Expr
-decM x = F $ Dec (R x) :: Int -> Expr
-
-interpret :: Monad a => (∀ x . f x -> m x) -> Free f a -> m a
-interpret _  (R x) = return x
-interpret nt (F x) = nt x >>= interpret nt
+incM x = F $ Inc x (R ()) :: Int -> Free Counter ()
+decM x = F $ Dec x (R ()) :: Int -> Free Counter ()
 
 count :: Counter x -> State Int x
 count = \case
-  Inc x -> modify (+x)
-  Dec x -> modify (-x)
+  Inc x c -> c <$ modify (+x)
+  Dec x c -> c <$ modify (-x)
+
+flip runState 0 . interpret count $
+  incM 3 >> decM 4 >> incM 5
 ```
 
 # Free monads III
@@ -170,7 +180,8 @@ instance Functor f => Monad (Free f) where
 
 # Data types à la carte
 
-In order to use the power of the free monad construction, we need a way to compose the base functor.   It is easy to combine functors:
+In order to use the power of the free monad construction, we need a way to
+compose the base functor.   It is easy to combine functors:
 
 ```haskell
 data Or f g a = InL (f a) | InR (g a)
@@ -183,14 +194,14 @@ program = Free Syntax ()
 Syntax is extended like so:
 
 ```haskell
-weakenL :: Free f a -> Free (Or f g) a
-weakenL (R x) = R x
-weakenL (F x) = F . InL $ weaken <$> x
-
--- weakenR similar
+injL :: Free f a -> Free (Or f g) a
+injL (R x) = R x
+injL (F x) = F . InL $ weaken <$> x
+-- injR is similar
 ```
 
-Exercise: define a typeclass `Member f f'` that you can use to implement `weaken :: Member f f' => Free f a -> Free f' a` when `f'` includes `f` as a summand.
+Exercise: How would you express the constraint that a functor `f` is in an
+`Or`-tree?  How would you embed `f`-syntax into the larger syntax?
 
 # Example project
 
@@ -202,13 +213,15 @@ Exercise: define a typeclass `Member f f'` that you can use to implement `weaken
 [1]: game-1/src/Main.html
 [2]: game-2/src/Main.html
 
-# Higher order effects
+# One slide on higher order effects
 
-Effect theory so far is first order.  Higher order effects may enclose effectful computations.
+Effect theory so far is first order.  Higher order effects may enclose
+effectful computations.
 
 ```haskell
 throw :: Has (Error e) effs => e -> Effect effs r
-catch :: Has (Error e) effs => Effect effs r -> (e -> Effect effs r) -> Effect effs r
+catch :: Has (Error e) effs
+      => Effect effs r -> (e -> Effect effs r) -> Effect effs r
 ```
 
 ::: incremental
