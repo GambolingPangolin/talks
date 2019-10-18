@@ -67,20 +67,20 @@ Effect systems work with a higher order type that includes a representation of
 a set of effects
 
 ```haskell
-data Effect e a = _ -- details later
+data Effect setOfEffects a = _ -- details later
 ```
 . . .
 
 Effectful terms introduce specific effects
 
 ```haskell
-iffy :: HasEffect e MaybeE => Maybe a -> Effect e a
+iffy :: Maybe a -> Effect { MaybeE ; ...e } a
 ```
 
 Handlers remove effects
 
 ```haskell
-handleMaybeE :: Effect (MaybeE ∪ e) a -> Effect e (Maybe a)
+handleMaybeE :: Effect { MaybeE ; ...e } a -> Effect e (Maybe a)
 ```
 
 # Abstraction
@@ -97,6 +97,21 @@ handleMaybeE :: Effect (MaybeE ∪ e) a -> Effect e (Maybe a)
 - Algebraic effects run in a fixed monad, but the effects in scope vary
 
 :::
+
+# Example project
+
+- [game (mark 0)][0]
+- [game (mark 1)][1]
+- [game (mark 2)][2]
+
+[0]: game-0/src/Main.html
+[1]: game-1/src/Main.html
+[2]: game-2/src/Main.html
+
+# Some constructions
+
+In order to understand the implementation of `polysemy` we will look at some
+abstract free constructions
 
 # Free functors
 
@@ -202,16 +217,6 @@ injL (F x) = F . InL $ weaken <$> x
 
 Exercise: How would you express the constraint that a functor `f` is in an
 `Or`-tree?  How would you embed `f`-syntax into the larger syntax?
-
-# Example project
-
-- [game (mark 0)][0]
-- [game (mark 1)][1]
-- [game (mark 2)][2]
-
-[0]: game-0/src/Main.html
-[1]: game-1/src/Main.html
-[2]: game-2/src/Main.html
 
 # One slide on higher order effects
 
