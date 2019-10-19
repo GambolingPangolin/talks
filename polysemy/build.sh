@@ -14,7 +14,6 @@ case $1 in
   execs)
 
     cabal v2-build \
-      --write-ghc-environment-files=always \
       --enable-documentation ;;
 
   sources)

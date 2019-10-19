@@ -1,4 +1,4 @@
-cabal-version:       3.0
+cabal-version:       2.4
 name:                polysemy-talk
 version:             1.0.0
 synopsis:            An example project using polysemy
@@ -9,6 +9,7 @@ maintainer:          ics@gambolingpangolin.com
 build-type:          Simple
 extra-source-files:
     CHANGELOG.md
+    README.md
     slides.md
 
 common exec

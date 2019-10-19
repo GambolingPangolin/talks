@@ -1,0 +1,5 @@
+packages:
+  ./polysemy
+
+documentation: True
+write-ghc-environment-files: always
