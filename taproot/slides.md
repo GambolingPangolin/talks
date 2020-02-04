@@ -2,7 +2,7 @@
 % Ian Shipman, Bitnomial
 % February 5, 2020
 
-# Slides and code
+# Slides
 
 **https://github.com/GambolingPangolin/talks/taproot**
 
@@ -28,7 +28,7 @@ There are many dimensions to consider if you want to be more systematic.
 . . .
 
 ::: incremental
-- Feature set: Will I get new features?  Will I get to keep those I use today?
+- Feature set: Will I get new features?  Will I get to keep those I use today?  How do new features interact with existing features?
 - Performance: Will the software run faster, use less bandwidth, etc.?
 - Usability: Will the sofware be easier to use?
 - Software quality: Will the software be less buggy?
@@ -129,20 +129,15 @@ Three of the exciting new BIPs under discussion these days are
 ::: incremental
 - BIP 340: Schnorr signatures - a new digital signature algorithm, signature, and key encodings
 - BIP 341: Taproot - a new kind of output
-- BIP 342: Tapscript - a new script version, redefining `OP_CHECKSIG` to verify Schnorr sigs among other things
+- BIP 342: Tapscript - a new script version with changes to script validation rules
 :::
 
 # BIP 340: Schnorr signatures 1
 
 - digital signatures are the basis of coin ownership
+- Current algorithm ECDSA chosen over Schnorr due to a patent
 - Signature = `(R,s)` where `s * G = H(R|P|m)P + R`
-- useful standard potentially beyond bitcoin
-- ECDSA is the current signing algorithm
-- advantages of Schnorr over ECDSA
-  * simpler security model (DLP)
-  * batch verification
-  * signature aggregation
-- applications: MuSig, adaptor signatures
+- BIP 340 is a useful standard potentially beyond bitcoin
 
 # BIP 340: Schnorr signatures 2
 
@@ -154,16 +149,21 @@ Security model
 
 # BIP 340: Schnorr signatures 3
 
-Schnorr signatures can be batch verified
+Schnorr signatures can be batch verified (ECDSA cannot)
 
 ```
-Keys = P_1, ..., P_n
-Messages = m_1, ..., m_n
+Keys       = P_1, ..., P_n
+Messages   = m_1, ..., m_n
 Signatures = (R_1, s_1), ..., (R_n, s_n)
+
 Randomly sample x_1, ..., x_n
-Test: (x_1 * s_1 + ... + x_n * s_n) * G
-   == x_1 * [ H(R_1|P_1|m_1) * P_1 + R_1] +
-      ... + x_n * [ H(R_n|P_n|m_n) * P_n + R_n]
+Compute:
+  s := x_1 * s_1 + ... + x_n * s_n
+  E := x_1 * H(R_1|P_1|m_1) * P_1 + ...
+        + x_n * H(R_n|P_n|m_n) * P_n
+  R := x_1 * R_1 + ... + x_n * R_n
+
+Test: s * G == E + R
 ```
 
 # BIP 340: Schnorr signatures 4
@@ -199,17 +199,58 @@ Taproot provides two spending pathways
 - Spend by proving a script `s` is in the script set and passing evaluation
 :::
 
-# BIP 341: Taproot
+# BIP 341: Taproot 2
 
-- two spending pathways: pubkey & script
-- scripts are stored in a merkle tree
-- fungibility
-- script privacy
+The taproot BIP introduces merklized abstract syntax trees (MAST)
 
-# BIP 342: Tapscript
+![Merkle tree](MerkleTree1.svg)
 
-- redefine `OP_CHECKSIG` and cousins to use Schnorr
+# BIP 341: Taproot 3
+
+Spender(s) decide on a set of scripts and arrange them into a merkle tree.  The output commits to the root of this tree, and spending a leaf requires a proof of inclusion.
+
+. . .
+
+::: incremental
+- tree does not need to be balanced, more likely-to-be-spent scripts can occur closer to the root
+- proposal uses a canoncial encoding where at each node, we sort the child hashes lexicographically before hashing the pair
+:::
+
+
+# BIP 341: Taproot 4
+
+Taproot advantages
+
+. . .
+
+::: incremental
+- fungibility - taproot outputs look like pay to pubkey unless spent by a script branch
+- script privacy - spends only reveal the script branch that is actually used
+:::
+
+# BIP 342: Tapscript 1
+
+This BIP covers some changes to the meanings of scripts that appear in taproot script spends
+
+. . .
+
+::: incremental
+- redefine `OP_CHECKSIG` and cousins to use Schnorr verification
+- replace `OP_CHECKMULTISIG` with `OP_CHECKSIGADD`
 - `OP_SUCCESS` upgrade mechanism
+:::
+
+# BIP 342: Tapscript 2
+
+`OP_SUCCESS` opcodes
+
+. . .
+
+::: incremental
+- repurpose opcodes numbered 80, 98, 126-129, 131-134, 137-138, 141-142, 149-153, 187-254
+- if a tapscript contains any of these opcodes, validation automatically suceeds
+- compared with the no-op upgrade path, removes the need to support two different interpretations for the same script
+:::
 
 # Upgrade assessment
 
@@ -221,14 +262,9 @@ Taproot provides two spending pathways
 - Security: Schnorr signatures have clearer security and compose better than ECDSA
 :::
 
-# ... for users
+# Thanks for your time!
 
-- added output type makes wallet software more complex
-- script branch hiding makes complex spend logic more efficient in general
+Where to go for further discussion
 
-# ... for miners
-
-# ... for developers
-
-- schnorr makes new protocols possible
-- complexity, departure from some established techniques and conventions
+- `#bitcoin-dev` on Freenode
+- bitcoin-dev mailing list
