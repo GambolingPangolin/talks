@@ -2,3 +2,6 @@
 - https://github.com/bitcoin/bips/blob/master/bip-0341.mediawiki (bip-taproot)
 - https://github.com/bitcoin/bips/blob/master/bip-0342.mediawiki (bip-tapscript)
 - https://diyhpl.us/wiki/transcripts/sf-bitcoin-meetup/2019-12-16-bip-taproot-bip-tapscript/
+- https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2018-January/015614.html (original taproot proposal)
+- https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2020-January/017547.html (soft-fork discussion thread)
+- https://blog.bitmex.com/bitcoins-consensus-forks/
