@@ -2,9 +2,18 @@
 % Ian Shipman, Bitnomial
 % February 5, 2020
 
-# Slides
+# Welcome
 
-**https://github.com/GambolingPangolin/talks/taproot**
+Bitcoin & Open Blockchain is a volunteer operated organization.  Please donate what you can at
+
+- [https://bob-chi.org/donate](https://bob-chi.org/donate)
+
+. . .
+
+Slides are available at
+
+- [https://github.com/GambolingPangolin/talks/taproot](https://github.com/GambolingPangolin/talks/taproot)
+
 
 # Software upgrades
 
@@ -50,6 +59,18 @@ Bitcoin users have to agree on some shared global state: the blockchain.  This l
 
 Only has to do with the subset of the functionality that validates the shared state.
 
+# Effects on decentralization
+
+Bitcoin exists in an adversarial world and treats trust between peers as a scarce resource to conserve.
+
+. . .
+
+How does a proposed upgrade effect trust relationships?
+
+. . .
+
+Main way to think about this: how does an upgrade change the cost of running a fully validating node?
+
 # Hard fork example
 
 One noteworthy hard fork of Bitcoin was Bitcoin Cash, launched in August 2017
@@ -76,6 +97,10 @@ Pay to Script Hash was introduced by a soft fork in April 2012
   * deserialize the top stack item as a script
   * execute against the remaining stack items
 :::
+
+. . .
+
+Old nodes do some but not all of the validation.  If an upgraded node accepts the transaction, so will a non-upgraded node.
 
 # BIP 2: The BIP Process
 
@@ -110,15 +135,19 @@ Matt Corallo recently codified the spirit of the bitcoin upgrade process into so
 
 # BIP 9 - Version bits with timeout and delay
 
+::: incremental
 - Activates based on miner signaling (95% during a retargeting period)
 - Activation can fail
 - Provides a start time and end time for signaling
+:::
 
 # BIP 8 - Version bits with lock-in by height
 
+::: incremental
 - Activates early based on miner signaling
 - Cannot fail after starting
 - Locks in after a "timeout" height
+:::
 
 # The new BIPs
 
@@ -134,22 +163,42 @@ Three of the exciting new BIPs under discussion these days are
 
 # BIP 340: Schnorr signatures 1
 
-- digital signatures are the basis of coin ownership
+Schnorr signature scheme
+
+```
+P = public key
+m = message digest
+R = random nonce
+signature: (R,s) where s * G = H(R|P|m)P + R
+```
+
+. . .
+
+::: incremental
+- Digital signatures are the basis of coin ownership
 - Current algorithm ECDSA chosen over Schnorr due to a patent
-- Signature = `(R,s)` where `s * G = H(R|P|m)P + R`
-- BIP 340 is a useful standard potentially beyond bitcoin
+- BIP 340 is totally general and might be a useful standard outside bitcoin
+:::
 
 # BIP 340: Schnorr signatures 2
 
 Security model
 
+::: incremental
 - Schnorr security provably reduces to the security of the discrete log problem
 - Easier to analyze protocols built using Schnorr
 - ECDSA has empirical security
+:::
 
 # BIP 340: Schnorr signatures 3
 
 Schnorr signatures can be batch verified (ECDSA cannot)
+
+. . .
+
+Batch verification = checking many signatures faster together than one at a time
+
+. . .
 
 ```
 Keys       = P_1, ..., P_n
@@ -158,10 +207,10 @@ Signatures = (R_1, s_1), ..., (R_n, s_n)
 
 Randomly sample x_1, ..., x_n
 Compute:
-  s := x_1 * s_1 + ... + x_n * s_n
-  E := x_1 * H(R_1|P_1|m_1) * P_1 + ...
-        + x_n * H(R_n|P_n|m_n) * P_n
-  R := x_1 * R_1 + ... + x_n * R_n
+  s   := x_1 * s_1 + ... + x_n * s_n
+  e_i := H(R_i|P_i|m_i) * P_i
+  E   := x_1 * e_1 + ...  + x_n * e_n
+  R   := x_1 * R_1 + ... + x_n * R_n
 
 Test: s * G == E + R
 ```
@@ -170,11 +219,13 @@ Test: s * G == E + R
 
 Applications
 
+::: incremental
 - `MuSig` - where N parties combine pubkeys to produce a group key and interactively build signatures for it
+  * improved privacy for e.g. lightning channels
 - Adaptor signatures - where publishing a signature reveals a secret
   * scriptless atomic swaps
   * certain upgrades to lightning payment routing
-
+:::
 
 # BIP 341: Taproot 1
 
@@ -184,28 +235,35 @@ Structure of a taproot output
 
 ::: incremental
 - A taproot output has an associated "output key" `Q`
-- There is also a commitment `m` to a set of output scripts
+- Outputs `scriptPubKey` = `"01 Q"`
+- There is also a commitment `m` to a set of output scripts and "internal key" `P`
 - The taproot "internal key" `P` satisifies `H(P|m)*G + P = Q`
+- Public keys use a 32 byte encoding
 :::
 
-. . .
+# BIP 341: Taproot 2
+
 
 Taproot provides two spending pathways
 
 . . .
+
+Output key `Q`, internal key `P`
+
+`H(P|script_commitment) * G + P = Q`
 
 ::: incremental
 - Spend with a `Q` signature
 - Spend by proving a script `s` is in the script set and passing evaluation
 :::
 
-# BIP 341: Taproot 2
+# BIP 341: Taproot 3
 
 The taproot BIP introduces merklized abstract syntax trees (MAST)
 
 ![Merkle tree](MerkleTree1.svg)
 
-# BIP 341: Taproot 3
+# BIP 341: Taproot 4
 
 Spender(s) decide on a set of scripts and arrange them into a merkle tree.  The output commits to the root of this tree, and spending a leaf requires a proof of inclusion.
 
@@ -217,7 +275,7 @@ Spender(s) decide on a set of scripts and arrange them into a merkle tree.  The 
 :::
 
 
-# BIP 341: Taproot 4
+# BIP 341: Taproot 5
 
 Taproot advantages
 
@@ -236,7 +294,7 @@ This BIP covers some changes to the meanings of scripts that appear in taproot s
 
 ::: incremental
 - redefine `OP_CHECKSIG` and cousins to use Schnorr verification
-- replace `OP_CHECKMULTISIG` with `OP_CHECKSIGADD`
+- replace `OP_CHECKMULTISIG` with `OP_CHECKSIGADD` (to support batch verifiable multisig)
 - `OP_SUCCESS` upgrade mechanism
 :::
 
@@ -260,6 +318,8 @@ This BIP covers some changes to the meanings of scripts that appear in taproot s
 - Usability: you decide ...
 - Software quality: significant complexity increase with the corresponding potential for bugs
 - Security: Schnorr signatures have clearer security and compose better than ECDSA
+- Fork type: soft fork
+- Effect on decentralization: probably an improvement due to bandwidth savings and more efficient signature validation
 :::
 
 # Thanks for your time!
