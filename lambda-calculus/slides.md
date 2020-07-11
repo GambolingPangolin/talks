@@ -50,7 +50,16 @@ Every LC expression is one of:
 - an abstraction 
 - an application
 
-This is useful because analyzing LC expressions can proceed by a case analysis
+This is useful because analyzing LC expressions can proceed by a case analysis.  
+
+. . .
+
+Subexpressions of LC expressions have the natural meaning:
+
+::: incremental
+- `E` in `x => E`
+- `A` and `B` in `A B`
+:::
 
 # Variable types
 
