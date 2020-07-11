@@ -74,9 +74,9 @@ A _reducible expression (redex)_ is a LC expression of the form `f x` where `f` 
 Beta reduction: `(x => E) z ---> E[x/z]` which means every free occurrance of `x` in `E` with `z`
 
 ::: incremental 
-* `((f, x) => f x) (y => y)`
-* `(f x)[f / (y => y)] = (y => y) x`
-* `y[y/x] = x`
+* `(f => x => f x) (y => y)`
+* `(x => f x)[f / (y => y)]` equals `x => (y => y) x`
+* This reduces again to `x => y[y/x]`  which equals `x => x`
 :::
 
 # Careful!
