@@ -5,7 +5,7 @@ case $1 in
   slides)
 
     pandoc \
-      --self-contained \
+      --embed-resources \
       --standalone \
       -t Slidy \
       -o dist/slides.html \

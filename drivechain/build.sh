@@ -3,7 +3,7 @@
 [[ ! -d dist ]] && mkdir dist
 
 pandoc \
-    --self-contained \
+    --embed-resources \
     --standalone \
     -t revealjs \
     -o dist/slides.html \
