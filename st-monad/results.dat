@@ -1,0 +1,14 @@
+Quicksort - persistent natural
+600 with mean time 0.012515472861s
+
+Quicksort - persistent in-place
+600 with mean time 0.021853962666s
+
+Quicksort - mutable in-place
+600 with mean time 0.000186111436s
+
+Dijkstra - persistent in-place
+600 with mean time 0.033507207878s
+
+Dijkstra - mutable in-place
+600 with mean time 0.03058090203s

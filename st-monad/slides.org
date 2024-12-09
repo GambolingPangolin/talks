@@ -1,0 +1,104 @@
+#+title: ST Monad
+#+author: Ian Shipman
+#+date: 2024-12-11
+
+* Non-negotiable Haskell properties
+- *Referential transparency*
+- *Church-Rossner property*
+
+* Referential Transparency
+The value of an expression is entirely determined by the expression itself
+syntactically.
+
+** Counterexample
+#+begin_src js
+const create = () => {
+    let offset = 0;
+    const increment = () => { offset += 1; }
+    const apply_offset = (n) => n + offset
+    return { increment, apply_offset }
+}
+
+const { increment, apply_offset } = create();
+
+const a = apply_offset(6);
+increment();
+
+// Same expression, but different result
+const b = apply_offset(6);
+
+return { a , b }
+#+end_src
+
+#+RESULTS:
+: { a: 6, b: 7 }
+
+* Church-Rossner property
+Reducing expressions is independent of the ordering choice of reducible
+subexpressions.
+
+* Phantom variables
+A phantom variable is a type variable that appears on the LHS of a =newtype= or
+=data= declaration that does not appear on the right hand side.
+
+#+begin_src haskell
+newtype Tagged tag a = Tagged a
+
+data ConnectionCount
+data UserId
+
+count :: Tagged ConnectionCount Int
+userId :: Tagged UserId Int
+#+end_src
+
+* Free and bound type variables
+Similar to free and bound variables in expressions.
+
+- Free.  Not quantified within the expression.
+- Bound.  Explicitly bound with =forall=.
+
+#+begin_src haskell
+-- a is free in the subexpression (a -> r)
+free :: forall a r. (a -> r) -> r
+
+-- x is bound in the subexpression (x -> r)
+bound :: forall r. (forall x. x -> r) -> r
+#+end_src
+
+* Mutable state encapsulation
+- Original paper - https://dl.acm.org/doi/pdf/10.1145/773473.178246
+- Haskell =base= library
+  https://hackage.haskell.org/package/base-4.18.1.0/docs/Control-Monad-ST.html
+
+
+#+begin_src haskell
+data ST s a
+runST :: forall a. (forall s. ST s a) -> a
+#+end_src
+
+- Phantom type parameter =s= guarantees encapsulation.
+- To link a value to an specific ST thread: add an =s= parameter.
+- Since =s= is bound in the first argument to =runST= it is not possible for =s=
+  to appear in =a=.
+
+* Interface
+** Variables
+https://hackage.haskell.org/package/base-4.18.1.0/docs/Data-STRef.html
+
+*** Jailbreak attempt
+#+begin_src haskell
+runST :: forall a. (forall s. ST s a) -> a
+newSTRef 42 :: forall s. ST s (STRef s Int)
+
+-- Not well-typed
+-- a ~ STRef s Int XXXXXX
+no = runST $ newSTRef 42
+#+end_src
+
+** Arrays
+https://hackage.haskell.org/package/array/docs/Data-Array-ST.html
+
+** Vectors
+https://hackage.haskell.org/package/vector-0.13.2.0/docs/Data-Vector-Mutable.html
+
+* Examples

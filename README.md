@@ -3,6 +3,7 @@ GambPang talks
 
 Welcome to my repository of talks I put together.
 
+* 2024-12-11 / Chicago Haskell Meetup / ST Monad
 * 2023-08-15 / Milwaukee Bitcoin Meetup / Bitcoin Development
 * 2022-08-10 / Chicago Bitdevs / Drivechain
 * 2020-07-11 / Open Source Chicago / Lambda Calculus
